@@ -125,9 +125,11 @@ bool mlir::isLoopMemoryParallel(AffineForOp forOp) {
     if (isa<AffineReadOpInterface, AffineWriteOpInterface>(op))
       loadAndStoreOps.push_back(op);
     else if (!isa<AffineForOp, AffineYieldOp, AffineIfOp>(op) &&
-             !MemoryEffectOpInterface::hasNoEffect(op))
-      return WalkResult::interrupt();
-
+             !MemoryEffectOpInterface::hasNoEffect(op)) {
+      CallOp callop = dyn_cast<CallOp>(op);
+      if (!callop || !callop->hasAttr("parallelizable"))
+        return WalkResult::interrupt();
+    }
     return WalkResult::advance();
   });
 

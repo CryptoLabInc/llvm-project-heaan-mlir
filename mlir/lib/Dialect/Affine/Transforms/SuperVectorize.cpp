@@ -679,6 +679,8 @@ struct VectorizationState {
   ///   * 'replacement': %0 = arith.addf %1, %2 : vector<128xf32>
   void registerOpVectorReplacement(Operation *replaced, Operation *replacement);
 
+  void registerOpScalarReplacement(Operation *replaced, Operation *replacement);
+
   /// Registers the vector replacement of a scalar value. The replacement
   /// operation should have a single result, which replaces the scalar value.
   ///
@@ -793,6 +795,23 @@ void VectorizationState::registerOpVectorReplacement(Operation *replaced,
                                        std::get<1>(resultTuple));
 }
 
+void VectorizationState::registerOpScalarReplacement(Operation *replaced,
+                                                     Operation *replacement) {
+  LLVM_DEBUG(dbgs() << "\n[early-vect]+++++ commit scalarized op:\n");
+  LLVM_DEBUG(dbgs() << *replaced << "\n");
+  LLVM_DEBUG(dbgs() << "into\n");
+  LLVM_DEBUG(dbgs() << *replacement << "\n");
+
+  assert(replaced->getNumResults() == replacement->getNumResults() &&
+         "Unexpected replaced and replacement results");
+  assert(opVectorReplacement.count(replaced) == 0 && "already registered");
+  opVectorReplacement[replaced] = replacement;
+
+  for (auto resultTuple :
+       llvm::zip(replaced->getResults(), replacement->getResults()))
+    registerValueScalarReplacementImpl(std::get<0>(resultTuple),
+                                       std::get<1>(resultTuple));
+}
 /// Registers the vector replacement of a scalar value. The replacement
 /// operation should have a single result, which replaces the scalar value.
 ///
@@ -1386,6 +1405,50 @@ static Operation *vectorizeAffineForOp(AffineForOp forOp,
 /// widening of all its results and retrieve the vector counterparts for all its
 /// operands.
 static Operation *widenOp(Operation *op, VectorizationState &state) {
+  if (CallOp callOp = dyn_cast<CallOp>(op)) {
+    // Vectorizes a call instruction by rewriting the width argument with the
+    // vector width.
+    // Multidimensional vectorization of function calls is not allowed.
+    auto vecAttr = callOp->getAttr("vectorizable").dyn_cast_or_null<BoolAttr>();
+    bool vectorizable = vecAttr && vecAttr.getValue();
+
+    if (vectorizable && state.strategy->vectorSizes.size() == 1) {
+      unsigned vw = (unsigned)state.strategy->vectorSizes[0];
+
+      auto vwidth = callOp->getAttr("vectorization-width-argidx").cast<IntegerAttr>();
+      auto opops = callOp->getOpOperands();
+      for (unsigned i = 0; i < opops.size(); ++i) {
+        if (i == vwidth.getInt()) {
+          auto ci = dyn_cast_or_null<arith::ConstantOp>(
+              opops[i].get().getDefiningOp());
+          if (!ci || ci.getValue().cast<IntegerAttr>().getInt() != 1) {
+            LLVM_DEBUG(dbgs() << "\nCall's vector width must have been 1, not "
+                << ci);
+            return nullptr;
+          }
+
+          auto i64ty = IntegerType::get(ci.getContext(),
+              ci.getType().getIntOrFloatBitWidth());
+          auto newVW = state.builder.create<arith::ConstantOp>(callOp.getLoc(),
+              IntegerAttr::get(i64ty, vw));
+          opops[i].set(newVW);
+        } else {
+          auto orgValue = opops[i].get();
+          Value newValue = state.valueScalarReplacement.lookupOrDefault(
+              orgValue);
+          opops[i].set(newValue);
+        }
+      }
+      auto newOp = state.builder.clone(*op);
+      state.registerOpVectorReplacement(op, newOp);
+
+      return callOp;
+    } else {
+      // This call cannot be vectorized.
+      return nullptr;
+    }
+  }
+
   SmallVector<Type, 8> vectorTypes;
   for (Value result : op->getResults())
     vectorTypes.push_back(
@@ -1546,6 +1609,23 @@ vectorizeLoopNest(std::vector<SmallVector<AffineForOp, 2>> &loops,
   //////////////////////////////////////////////////////////////////////////////
 
   auto opVecResult = rootLoop.walk<WalkOrder::PreOrder>([&](Operation *op) {
+    BoolAttr vectorizable = op->getAttr("vectorizable")
+        .dyn_cast_or_null<BoolAttr>();
+    if (vectorizable && !vectorizable.getValue()) {
+      LLVM_DEBUG(dbgs() << "[early-vect]+++++ Making a scalar copy: " << *op);
+      // Create a scalar copy.
+      SmallVector<Value, 8> newOperands;
+      state.getScalarValueReplacementsFor(op->getOperands(), newOperands);
+
+      OperationState scalarOpState(op->getLoc(), op->getName().getStringRef(),
+                                   newOperands, op->getResultTypes(),
+                                   op->getAttrs(), /*successors=*/{},
+                                   /*regions=*/{});
+      Operation *newOp = state.builder.createOperation(scalarOpState);
+      state.registerOpScalarReplacement(op, newOp);
+      return WalkResult::advance();
+    }
+
     LLVM_DEBUG(dbgs() << "[early-vect]+++++ Vectorizing: " << *op);
     Operation *vectorOp = vectorizeOneOperation(op, state);
     if (!vectorOp) {
