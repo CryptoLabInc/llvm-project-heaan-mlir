@@ -465,12 +465,16 @@ void GenerateLoopNest<AffineForOp>::doit(
     constantSteps.push_back(op.value());
   }
 
+  Optional<StringRef> doc;
+  if (linalgOp->hasAttr("doc"))
+    doc = (StringRef)linalgOp->getAttr("doc").cast<StringAttr>();
+
   mlir::buildAffineLoopNest(b, loc, lbs, ubs, constantSteps,
                             [&](OpBuilder &b, Location loc, ValueRange ivs) {
                               SmallVector<Value> operandValuesToUse =
                                   linalgOp.getInputAndOutputOperands();
                               bodyBuilderFn(b, loc, ivs, operandValuesToUse);
-                            });
+                            }, doc);
 }
 
 /// Specialization to build an linalg.tiled_loop

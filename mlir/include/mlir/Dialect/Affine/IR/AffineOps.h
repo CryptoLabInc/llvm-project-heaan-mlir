@@ -401,11 +401,13 @@ void buildAffineLoopNest(OpBuilder &builder, Location loc,
                          ArrayRef<int64_t> lbs, ArrayRef<int64_t> ubs,
                          ArrayRef<int64_t> steps,
                          function_ref<void(OpBuilder &, Location, ValueRange)>
-                             bodyBuilderFn = nullptr);
+                             bodyBuilderFn = nullptr,
+                         Optional<StringRef> doc = {});
 void buildAffineLoopNest(OpBuilder &builder, Location loc, ValueRange lbs,
                          ValueRange ubs, ArrayRef<int64_t> steps,
                          function_ref<void(OpBuilder &, Location, ValueRange)>
-                             bodyBuilderFn = nullptr);
+                             bodyBuilderFn = nullptr,
+                         Optional<StringRef> doc = {});
 
 /// Replace `loop` with a new loop where `newIterOperands` are appended with
 /// new initialization values and `newYieldedValues` are added as new yielded

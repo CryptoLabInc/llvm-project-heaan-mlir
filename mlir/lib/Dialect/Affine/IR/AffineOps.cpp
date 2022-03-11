@@ -1840,7 +1840,8 @@ static void buildAffineLoopNestImpl(
     OpBuilder &builder, Location loc, BoundListTy lbs, BoundListTy ubs,
     ArrayRef<int64_t> steps,
     function_ref<void(OpBuilder &, Location, ValueRange)> bodyBuilderFn,
-    LoopCreatorTy &&loopCreatorFn) {
+    LoopCreatorTy &&loopCreatorFn,
+    Optional<StringRef> doc) {
   assert(lbs.size() == ubs.size() && "Mismatch in number of arguments");
   assert(lbs.size() == steps.size() && "Mismatch in number of arguments");
 
@@ -1871,6 +1872,11 @@ static void buildAffineLoopNestImpl(
     // Delegate actual loop creation to the callback in order to dispatch
     // between constant- and variable-bound loops.
     auto loop = loopCreatorFn(builder, loc, lbs[i], ubs[i], steps[i], loopBody);
+    if (doc) {
+      loop->setAttr("doc",
+          StringAttr::get(builder.getContext(), *doc + "#depth" +
+              std::to_string(i)));
+    }
     builder.setInsertionPointToStart(loop.getBody());
   }
 }
@@ -1902,17 +1908,19 @@ buildAffineLoopFromValues(OpBuilder &builder, Location loc, Value lb, Value ub,
 void mlir::buildAffineLoopNest(
     OpBuilder &builder, Location loc, ArrayRef<int64_t> lbs,
     ArrayRef<int64_t> ubs, ArrayRef<int64_t> steps,
-    function_ref<void(OpBuilder &, Location, ValueRange)> bodyBuilderFn) {
+    function_ref<void(OpBuilder &, Location, ValueRange)> bodyBuilderFn,
+    Optional<StringRef> doc) {
   buildAffineLoopNestImpl(builder, loc, lbs, ubs, steps, bodyBuilderFn,
-                          buildAffineLoopFromConstants);
+                          buildAffineLoopFromConstants, doc);
 }
 
 void mlir::buildAffineLoopNest(
     OpBuilder &builder, Location loc, ValueRange lbs, ValueRange ubs,
     ArrayRef<int64_t> steps,
-    function_ref<void(OpBuilder &, Location, ValueRange)> bodyBuilderFn) {
+    function_ref<void(OpBuilder &, Location, ValueRange)> bodyBuilderFn,
+    Optional<StringRef> doc) {
   buildAffineLoopNestImpl(builder, loc, lbs, ubs, steps, bodyBuilderFn,
-                          buildAffineLoopFromValues);
+                          buildAffineLoopFromValues, doc);
 }
 
 AffineForOp mlir::replaceForOpWithNewYields(OpBuilder &b, AffineForOp loop,
