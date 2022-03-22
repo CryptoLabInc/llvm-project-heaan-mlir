@@ -348,7 +348,7 @@ Type LLVMTypeConverter::convertMemRefToBarePtr(BaseMemRefType type) {
   // Check that the memref has static shape, strides and offset. Otherwise, it
   // cannot be lowered to a bare pointer.
   auto memrefTy = type.cast<MemRefType>();
-  if (!memrefTy.hasStaticShape())
+  if (!memrefTy.hasStaticShape() && !memrefTy.getLayout().isIdentity())
     return {};
 
   int64_t offset = 0;
