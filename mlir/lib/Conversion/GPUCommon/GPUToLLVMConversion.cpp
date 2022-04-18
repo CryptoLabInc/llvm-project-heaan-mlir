@@ -16,6 +16,7 @@
 #include "mlir/Conversion/GPUCommon/GPUCommonPass.h"
 
 #include "../PassDetail.h"
+#include "mlir/Analysis/DataLayoutAnalysis.h"
 #include "mlir/Conversion/ArithmeticToLLVM/ArithmeticToLLVM.h"
 #include "mlir/Conversion/AsyncToLLVM/AsyncToLLVM.h"
 #include "mlir/Conversion/LLVMCommon/ConversionTarget.h"
@@ -344,7 +345,12 @@ private:
 } // namespace
 
 void GpuToLLVMConversionPass::runOnOperation() {
-  LLVMTypeConverter converter(&getContext());
+  Operation *op = getOperation();
+  ModuleOp mod = op->getParentOfType<ModuleOp>();
+  LowerToLLVMOptions options(&getContext(), DataLayout(mod));
+  options.useBarePtrCallConv = true;
+
+  LLVMTypeConverter converter(&getContext(), options);
   RewritePatternSet patterns(&getContext());
   LLVMConversionTarget target(getContext());
 
