@@ -348,7 +348,7 @@ void GpuToLLVMConversionPass::runOnOperation() {
   Operation *op = getOperation();
   ModuleOp mod = op->getParentOfType<ModuleOp>();
   LowerToLLVMOptions options(&getContext(), DataLayout(mod));
-  options.useBarePtrCallConv = true;
+  options.emitCWrappers = true;
 
   LLVMTypeConverter converter(&getContext(), options);
   RewritePatternSet patterns(&getContext());

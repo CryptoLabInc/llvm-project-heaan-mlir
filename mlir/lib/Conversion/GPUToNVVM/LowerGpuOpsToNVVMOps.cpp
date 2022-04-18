@@ -132,7 +132,6 @@ struct LowerGpuOpsToNVVMOpsPass
         m.getContext(),
         DataLayout(cast<DataLayoutOpInterface>(m.getOperation())));
     options.emitCWrappers = true;
-    options.useBarePtrCallConv = true;
     if (indexBitwidth != kDeriveIndexBitwidthFromDataLayout)
       options.overrideIndexBitwidth(indexBitwidth);
 
