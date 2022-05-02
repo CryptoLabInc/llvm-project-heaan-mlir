@@ -53,12 +53,15 @@ def LOptDisableLICM : I32EnumAttrCase<"disable_licm", 2>;
 def LOptInterleaveCount : I32EnumAttrCase<"interleave_count", 3>;
 def LOptDisablePipeline : I32EnumAttrCase<"disable_pipeline", 4>;
 def LOptPipelineInitiationInterval : I32EnumAttrCase<"pipeline_initiation_interval", 5>;
+def LOptVectorizeWidth : I32EnumAttrCase<"vectorize_width", 6>;
+def LOptDisableVectorize : I32EnumAttrCase<"vectorize_enable", 7>;
 
 def LoopOptionCase : I32EnumAttr<
     "LoopOptionCase",
     "LLVM loop option",
     [LOptDisableUnroll, LOptDisableLICM, LOptInterleaveCount,
-     LOptDisablePipeline, LOptPipelineInitiationInterval
+     LOptDisablePipeline, LOptPipelineInitiationInterval,
+     LOptVectorizeWidth, LOptDisableVectorize
     ]> {
   let cppNamespace = "::mlir::LLVM";
 }

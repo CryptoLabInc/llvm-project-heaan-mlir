@@ -322,7 +322,14 @@ LogicalResult ForLowering::matchAndRewrite(ForOp forOp,
   SmallVector<Value, 8> loopCarried;
   loopCarried.push_back(stepped);
   loopCarried.append(terminator->operand_begin(), terminator->operand_end());
-  rewriter.create<BranchOp>(loc, conditionBlock, loopCarried);
+  auto backEdge = rewriter.create<BranchOp>(loc, conditionBlock, loopCarried);
+
+  if (forOp->hasAttr("vectorize.width")) {
+    auto vw = forOp->getAttr("vectorize.width");
+    assert(vw.isa<IntegerAttr>() &&
+           "scf.for's vectorize.width must be IntegerAttr");
+    backEdge->setAttr("vectorize.width", vw);
+  }
   rewriter.eraseOp(terminator);
 
   // Compute loop bounds before branching to the condition.

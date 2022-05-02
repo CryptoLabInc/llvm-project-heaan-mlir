@@ -2551,6 +2551,20 @@ LoopOptionsAttrBuilder::setDisablePipeline(Optional<bool> value) {
   return setOption(LoopOptionCase::disable_pipeline, value);
 }
 
+/// Set the `vectorize_width` option to the provided value. If no value
+/// is provided the option is deleted.
+LoopOptionsAttrBuilder &
+LoopOptionsAttrBuilder::setVectorizeWidth(Optional<uint64_t> count) {
+  return setOption(LoopOptionCase::vectorize_width, count);
+}
+
+/// Set the `vectorize_enable` option to the provided value. If no value
+/// is provided the option is deleted.
+LoopOptionsAttrBuilder &
+LoopOptionsAttrBuilder::setVectorizeEnable(Optional<bool> value) {
+  return setOption(LoopOptionCase::vectorize_enable, value);
+}
+
 /// Set the `pipeline_initiation_interval` option to the provided value.
 /// If no value is provided the option is deleted.
 LoopOptionsAttrBuilder &LoopOptionsAttrBuilder::setPipelineInitiationInterval(
@@ -2607,10 +2621,12 @@ void LoopOptionsAttr::print(AsmPrinter &printer) const {
     case LoopOptionCase::disable_licm:
     case LoopOptionCase::disable_unroll:
     case LoopOptionCase::disable_pipeline:
+    case LoopOptionCase::vectorize_enable:
       printer << (option.second ? "true" : "false");
       break;
     case LoopOptionCase::interleave_count:
     case LoopOptionCase::pipeline_initiation_interval:
+    case LoopOptionCase::vectorize_width:
       printer << option.second;
       break;
     }
@@ -2647,6 +2663,7 @@ Attribute LoopOptionsAttr::parse(AsmParser &parser, Type type) {
     case LoopOptionCase::disable_licm:
     case LoopOptionCase::disable_unroll:
     case LoopOptionCase::disable_pipeline:
+    case LoopOptionCase::vectorize_enable:
       if (succeeded(parser.parseOptionalKeyword("true")))
         value = 1;
       else if (succeeded(parser.parseOptionalKeyword("false")))
@@ -2659,6 +2676,7 @@ Attribute LoopOptionsAttr::parse(AsmParser &parser, Type type) {
       break;
     case LoopOptionCase::interleave_count:
     case LoopOptionCase::pipeline_initiation_interval:
+    case LoopOptionCase::vectorize_width:
       if (failed(parser.parseInteger(value))) {
         parser.emitError(parser.getNameLoc(), "expected integer value");
         return {};

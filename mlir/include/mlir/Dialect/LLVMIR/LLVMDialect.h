@@ -115,6 +115,14 @@ public:
   /// is provided the option is deleted.
   LoopOptionsAttrBuilder &setDisablePipeline(Optional<bool> value);
 
+  /// Set the `vectorize_width` option to the provided value. If no value
+  /// is provided the option is deleted.
+  LoopOptionsAttrBuilder &setVectorizeWidth(Optional<uint64_t> width);
+
+  /// Set the `vectorize_enable` option to the provided value. If no value
+  /// is provided the option is deleted.
+  LoopOptionsAttrBuilder &setVectorizeEnable(Optional<bool> width);
+
   /// Set the `pipeline_initiation_interval` option to the provided value.
   /// If no value is provided the option is deleted.
   LoopOptionsAttrBuilder &

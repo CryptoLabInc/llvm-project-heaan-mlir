@@ -198,6 +198,15 @@ static llvm::MDNode *getLoopOptionMetadata(llvm::LLVMContext &ctx,
     cstValue = llvm::ConstantInt::get(
         llvm::IntegerType::get(ctx, /*NumBits=*/32), value);
     break;
+  case LoopOptionCase::vectorize_width:
+    name = "llvm.loop.vectorize.width";
+    cstValue = llvm::ConstantInt::get(
+        llvm::IntegerType::get(ctx, /*NumBits=*/32), value);
+    break;
+  case LoopOptionCase::vectorize_enable:
+    name = "llvm.loop.vectorize.enable";
+    cstValue = llvm::ConstantInt::getBool(ctx, value);
+    break;
   }
   return llvm::MDNode::get(ctx, {llvm::MDString::get(ctx, name),
                                  llvm::ConstantAsMetadata::get(cstValue)});
