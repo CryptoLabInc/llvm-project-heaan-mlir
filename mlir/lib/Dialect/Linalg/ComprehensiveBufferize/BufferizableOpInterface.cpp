@@ -633,18 +633,6 @@ bool mlir::linalg::comprehensive_bufferize::BufferizationState::isMapped(
   return mapping.contains(value);
 }
 
-void mlir::linalg::comprehensive_bufferize::BufferizationState::markOpObsolete(
-    Operation *op) {
-  obsoleteOps.push_back(op);
-}
-
-void mlir::linalg::comprehensive_bufferize::BufferizationState::
-    eraseObsoleteOps() {
-  for (Operation *op : obsoleteOps)
-    op->erase();
-  obsoleteOps.clear();
-}
-
 MemRefType mlir::linalg::comprehensive_bufferize::getContiguousMemRefType(
     ShapedType shapedType, MemRefLayoutAttrInterface layout,
     Attribute memorySpace) {

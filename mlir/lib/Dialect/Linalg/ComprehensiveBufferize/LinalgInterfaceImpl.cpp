@@ -61,6 +61,17 @@ static LogicalResult bufferizeLinalgOp(OpBuilder &b, LinalgOp op,
   if (!op.hasTensorSemantics())
     return op->emitError() << "op does not have tensor semantics";
 
+  if (linalg::GenericOp genericOp =
+      dyn_cast<linalg::GenericOp>(op.getOperation())) {
+    LogicalResult res = comprehensive_bufferize::bufferize(
+        &genericOp.getRegion(),
+        // Directly passing state is fine. This will update information
+        // about the ops in this region only.
+        state);
+    if (res.failed())
+      return res;
+  }
+
   Location loc = op.getLoc();
   SmallVector<Value> newInputBuffers;
   newInputBuffers.reserve(op.getNumInputs());
@@ -140,6 +151,9 @@ struct LinalgOpInterface
                           BufferizationState &state) const {
     return bufferizeLinalgOp(b, cast<LinalgOp>(op), state);
   }
+
+  bool isAllocationHoistingBarrier(Operation *op) const
+  { return true; }
 };
 
 struct InitTensorOpInterface

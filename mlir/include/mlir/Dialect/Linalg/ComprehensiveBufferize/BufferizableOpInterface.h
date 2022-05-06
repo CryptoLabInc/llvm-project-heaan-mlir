@@ -272,12 +272,6 @@ struct BufferizationState {
   /// Return `true` if the given value is mapped.
   bool isMapped(Value value) const;
 
-  /// Mark `op` as obsolete, so that it is deleted after bufferization.
-  void markOpObsolete(Operation *op);
-
-  /// Erase all ops that were marked obsolete.
-  void eraseObsoleteOps();
-
   /// Return dialect-specific bufferization state.
   template <typename StateT> StateT &getDialectState(StringRef name) {
     // Create state if it does not exist yet.

@@ -750,7 +750,13 @@ LogicalResult mlir::linalg::comprehensive_bufferize::runComprehensiveBufferize(
     return failure();
 
   // Erase all obsolete ops.
-  state.eraseObsoleteOps();
+  SmallVector<Operation *> obsoleteOps;
+  funcOp.walk([&obsoleteOps](Operation *op) {
+    if (op->hasAttr("comprehensive_bufferize.obsolete"))
+      obsoleteOps.push_back(op);
+  });
+  for (auto *op: obsoleteOps)
+    op->erase();
 
   return success();
 }

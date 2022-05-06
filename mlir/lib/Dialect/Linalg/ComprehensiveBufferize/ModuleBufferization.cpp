@@ -582,7 +582,13 @@ struct CallOpInterface
     newCallOp->setAttrs(callOp->getAttrs());
 
     // 5. Delete the op at the end of bufferization.
-    state.markOpObsolete(callOp);
+    // Attach a new 'comprehensive_bufferize.obsolete' attribute, and remove
+    // this call at the end of comprehensive_bufferize::
+    // runComprehensiveBufferize.
+    // Simply storing callOp at somewhere does not work; After regions of
+    // linalg.generics are copied, the stored call ops will become old ones.
+    callOp->setAttr("comprehensive_bufferize.obsolete",
+        BoolAttr::get(callOp->getContext(), true));
 
     return success();
   }
