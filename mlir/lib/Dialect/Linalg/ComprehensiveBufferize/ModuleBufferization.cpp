@@ -580,6 +580,13 @@ struct CallOpInterface
     Operation *newCallOp = b.create<CallOp>(callOp.getLoc(), funcOp.sym_name(),
                                             resultTypes, newOperands);
     newCallOp->setAttrs(callOp->getAttrs());
+    if (resultTypes.size() != 0) {
+      // TODO: extend this
+      assert (resultTypes.size() == callOp.getNumResults() &&
+              "Unsupported case: some of returned values of this call are"
+              " tensors, some are not");
+      callOp.getResults().replaceAllUsesWith(newCallOp->getResults());
+    }
 
     // 5. Delete the op at the end of bufferization.
     // Attach a new 'comprehensive_bufferize.obsolete' attribute, and remove
