@@ -211,7 +211,7 @@ mgpuMemHostRegisterMemRef(int64_t rank, void *_descriptor,
 
   uint64_t sizeBytes = sizes[0] * denseStrides[0] * elementSizeBytes;
   
-  for(unsigned i = 0; i < rank; ++i)
+  for (unsigned i = 0; i < rank; ++i)
     assert(strides[i] == denseStrides[i] &&
            "Mismatch in computed dense strides");
 
