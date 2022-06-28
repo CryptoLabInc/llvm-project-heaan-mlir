@@ -15,7 +15,7 @@
 #include "mlir/ExecutionEngine/CRunnerUtils.h"
 
 #include <stdio.h>
-#include <iostream>
+
 #include "cuda.h"
 
 #ifdef _WIN32
