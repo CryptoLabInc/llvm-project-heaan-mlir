@@ -15,7 +15,7 @@
 #include "mlir/ExecutionEngine/CRunnerUtils.h"
 
 #include <stdio.h>
-
+#include <iostream>
 #include "cuda.h"
 
 #ifdef _WIN32
@@ -168,22 +168,53 @@ mgpuMemHostRegister(void *ptr, uint64_t sizeBytes) {
 /// ranked memref descriptor struct of rank `rank`. Helpful until we have
 /// transfer functions implemented.
 extern "C" MLIR_CUDA_WRAPPERS_EXPORT void
-mgpuMemHostRegisterMemRef(int64_t rank, StridedMemRefType<char, 1> *descriptor,
+mgpuMemHostRegisterMemRef(int64_t rank, void *_descriptor,
                           int64_t elementSizeBytes) {
   // Only densely packed tensors are currently supported.
   int64_t *denseStrides = (int64_t *)alloca(rank * sizeof(int64_t));
-  int64_t *sizes = descriptor->sizes;
+  int64_t *sizes;
+  int64_t *strides;
+  char *data;
+  int64_t offset;
+
+  if (rank == 1) {
+    StridedMemRefType<char, 1> *descriptor = 
+                      (StridedMemRefType<char, 1> *)_descriptor;
+    sizes = descriptor->sizes;
+    strides = descriptor->strides;
+    data = descriptor->data;
+    offset = descriptor->offset;
+  }
+  else if (rank == 2) {
+    StridedMemRefType<char, 2> *descriptor = 
+                      (StridedMemRefType<char, 2> *)_descriptor;
+    sizes = descriptor->sizes;
+    strides = descriptor->strides;
+    data = descriptor->data;
+    offset = descriptor->offset;
+  }
+  else {
+    assert(rank == 3 && "rank over 3 is not implemented yet");
+    
+    StridedMemRefType<char, 3> *descriptor = 
+                      (StridedMemRefType<char, 3> *)_descriptor;
+    sizes = descriptor->sizes;
+    strides = descriptor->strides;
+    data = descriptor->data;
+    offset = descriptor->offset;
+  }
+  
   for (int64_t i = rank - 1, runningStride = 1; i >= 0; i--) {
     denseStrides[i] = runningStride;
     runningStride *= sizes[i];
   }
+
   uint64_t sizeBytes = sizes[0] * denseStrides[0] * elementSizeBytes;
-  int64_t *strides = &sizes[rank];
-  (void)strides;
-  for (unsigned i = 0; i < rank; ++i)
+  
+  for(unsigned i = 0; i < rank; ++i)
     assert(strides[i] == denseStrides[i] &&
            "Mismatch in computed dense strides");
 
-  auto *ptr = descriptor->data + descriptor->offset * elementSizeBytes;
+  auto *ptr = data + offset * elementSizeBytes;
   mgpuMemHostRegister(ptr, sizeBytes);
 }
