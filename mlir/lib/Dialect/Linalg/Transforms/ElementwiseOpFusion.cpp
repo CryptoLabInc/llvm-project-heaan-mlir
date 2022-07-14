@@ -318,6 +318,14 @@ fuseElementwiseOpsImpl(GenericOp producer, OpOperand *consumerOpOperand,
       /*doc=*/nullptr,
       /*library_call=*/nullptr);
 
+  if (consumer->hasAttr("doc") && producer->hasAttr("doc")) {
+    fusedOp->setAttr("doc",
+        StringAttr::get(fusedOp->getContext(),
+          consumer->getAttrOfType<StringAttr>("doc").getValue() +
+          "+" +
+          producer->getAttrOfType<StringAttr>("doc").getValue()));
+  }
+
   // Construct an AffineMap from consumer loops to producer loops.
   // consumer loop -> tensor index
   AffineMap consumerResultIndexMap =
