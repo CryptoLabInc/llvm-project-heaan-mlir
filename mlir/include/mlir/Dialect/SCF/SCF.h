@@ -85,7 +85,7 @@ LoopNest buildLoopNest(
     OpBuilder &builder, Location loc, ValueRange lbs, ValueRange ubs,
     ValueRange steps, ValueRange iterArgs,
     function_ref<ValueVector(OpBuilder &, Location, ValueRange, ValueRange)>
-        bodyBuilder = nullptr);
+        bodyBuilder = nullptr, Optional<StringRef> doc = {});
 
 /// A convenience version for building loop nests without iteration arguments
 /// (like for reductions). Does not take the initial value of reductions or
@@ -94,7 +94,7 @@ LoopNest buildLoopNest(
 LoopNest buildLoopNest(OpBuilder &builder, Location loc, ValueRange lbs,
                        ValueRange ubs, ValueRange steps,
                        function_ref<void(OpBuilder &, Location, ValueRange)>
-                           bodyBuilder = nullptr);
+                           bodyBuilder = nullptr, Optional<StringRef> doc = {});
 
 } // end namespace scf
 } // end namespace mlir

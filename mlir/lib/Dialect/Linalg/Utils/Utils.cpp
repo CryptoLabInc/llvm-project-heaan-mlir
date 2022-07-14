@@ -410,6 +410,10 @@ void GenerateLoopNest<scf::ForOp>::doit(
     procInfo = distributionOptions->procInfo(b, loc, parallelLoopRanges);
   }
 
+  Optional<StringRef> doc;
+  if (linalgOp->hasAttr("doc"))
+    doc = (StringRef)linalgOp->getAttr("doc").cast<StringAttr>();
+
   SmallVector<Value, 4> lbs, ubs, steps;
   unpackRanges(loopRanges, lbs, ubs, steps);
   LoopNest loopNest = mlir::scf::buildLoopNest(
@@ -424,7 +428,7 @@ void GenerateLoopNest<scf::ForOp>::doit(
           operandValuesToUse.append(iterArgs.begin(), iterArgs.end());
         }
         return bodyBuilderFn(b, loc, ivs, operandValuesToUse);
-      });
+      }, doc);
 
   if (!distributionOptions || loopNest.loops.empty())
     return;
@@ -536,7 +540,8 @@ static void generateParallelLoopNest(
     ValueRange steps, ArrayRef<Attribute> iteratorTypes,
     function_ref<void(OpBuilder &, Location, ValueRange)> bodyBuilderFn,
     SmallVectorImpl<Value> &ivStorage,
-    ArrayRef<DistributionMethod> distributionMethod = {}) {
+    ArrayRef<DistributionMethod> distributionMethod = {},
+    Optional<StringRef> doc = {}) {
   assert(lbs.size() == ubs.size());
   assert(lbs.size() == steps.size());
   assert(lbs.size() == iteratorTypes.size());
@@ -564,8 +569,8 @@ static void generateParallelLoopNest(
           generateParallelLoopNest(b, loc, lbs.drop_front(), ubs.drop_front(),
                                    steps.drop_front(),
                                    iteratorTypes.drop_front(), bodyBuilderFn,
-                                   ivStorage, distributionMethod);
-        });
+                                   ivStorage, distributionMethod, doc);
+        }, doc);
     return;
   }
   if (distributionMethod.empty()) {
@@ -611,7 +616,7 @@ static void generateParallelLoopNest(
               iteratorTypes.drop_front(numProcessed), bodyBuilderFn, ivStorage,
               (distributionMethod.size() < numProcessed)
                   ? ArrayRef<DistributionMethod>()
-                  : distributionMethod.drop_front(numProcessed));
+                  : distributionMethod.drop_front(numProcessed), doc);
         });
     return;
   }
@@ -627,7 +632,7 @@ static void generateParallelLoopNest(
           b, loc, lbs.drop_front(numProcessed), ubs.drop_front(numProcessed),
           steps.drop_front(numProcessed),
           iteratorTypes.drop_front(numProcessed), bodyBuilderFn, ivStorage,
-          distributionMethod.drop_front(numProcessed));
+          distributionMethod.drop_front(numProcessed), doc);
       b.create<scf::YieldOp>(loc, ValueRange{});
     });
     return;

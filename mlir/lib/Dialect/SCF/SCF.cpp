@@ -487,7 +487,7 @@ LoopNest mlir::scf::buildLoopNest(
     OpBuilder &builder, Location loc, ValueRange lbs, ValueRange ubs,
     ValueRange steps, ValueRange iterArgs,
     function_ref<ValueVector(OpBuilder &, Location, ValueRange, ValueRange)>
-        bodyBuilder) {
+        bodyBuilder, Optional<StringRef> doc) {
   assert(lbs.size() == ubs.size() &&
          "expected the same number of lower and upper bounds");
   assert(lbs.size() == steps.size() &&
@@ -524,6 +524,11 @@ LoopNest mlir::scf::buildLoopNest(
           currentIterArgs = args;
           currentLoc = nestedLoc;
         });
+    if (doc) {
+      loop->setAttr("doc",
+          StringAttr::get(builder.getContext(), *doc + "#depth" +
+              std::to_string(i)));
+    }
     // Set the builder to point to the body of the newly created loop. We don't
     // do this in the callback because the builder is reset when the callback
     // returns.
@@ -559,7 +564,8 @@ LoopNest mlir::scf::buildLoopNest(
 LoopNest mlir::scf::buildLoopNest(
     OpBuilder &builder, Location loc, ValueRange lbs, ValueRange ubs,
     ValueRange steps,
-    function_ref<void(OpBuilder &, Location, ValueRange)> bodyBuilder) {
+    function_ref<void(OpBuilder &, Location, ValueRange)> bodyBuilder,
+    Optional<StringRef> doc) {
   // Delegate to the main function by wrapping the body builder.
   return buildLoopNest(builder, loc, lbs, ubs, steps, llvm::None,
                        [&bodyBuilder](OpBuilder &nestedBuilder,
@@ -568,7 +574,7 @@ LoopNest mlir::scf::buildLoopNest(
                          if (bodyBuilder)
                            bodyBuilder(nestedBuilder, nestedLoc, ivs);
                          return {};
-                       });
+                       }, doc);
 }
 
 namespace {
