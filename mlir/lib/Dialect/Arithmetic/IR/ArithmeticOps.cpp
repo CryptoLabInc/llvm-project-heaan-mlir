@@ -92,7 +92,11 @@ void arith::ConstantOp::getAsmResultNames(
     // Otherwise, build a compex name with the value and type.
     SmallString<32> specialNameBuffer;
     llvm::raw_svector_ostream specialName(specialNameBuffer);
-    specialName << 'c' << intCst.getInt();
+    specialName << 'c';
+    if (intCst.getValue().getMinSignedBits() > 64)
+      specialName << "large";
+    else
+      specialName << intCst.getInt();
     if (intType)
       specialName << '_' << type;
     setNameFn(getResult(), specialName.str());
