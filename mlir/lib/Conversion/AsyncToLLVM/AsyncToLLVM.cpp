@@ -964,6 +964,16 @@ void ConvertAsyncToLLVMPass::runOnOperation() {
   ModuleOp module = getOperation();
   MLIRContext *ctx = module->getContext();
 
+  bool exist = false;
+  module->walk([&](Operation* op){
+    if (isa<async::AsyncDialect>(op->getDialect())) {
+      exist = true;
+    }
+  });
+
+  if (!exist)
+    return;
+
   // Add declarations for most functions required by the coroutines lowering.
   // We delay adding the resume function until it's needed because it currently
   // fails to compile unless '-O0' is specified.
