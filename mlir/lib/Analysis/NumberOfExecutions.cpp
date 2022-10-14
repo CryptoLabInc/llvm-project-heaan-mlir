@@ -115,7 +115,8 @@ static void computeRegionBlockNumberOfExecutions(
 /// block within a region is executed for all associated regions.
 NumberOfExecutions::NumberOfExecutions(Operation *op) : operation(op) {
   operation->walk<WalkOrder::PreOrder>([&](Region *region) {
-    computeRegionBlockNumberOfExecutions(*region, blockNumbersOfExecution);
+    if (!region->empty())
+      computeRegionBlockNumberOfExecutions(*region, blockNumbersOfExecution);
   });
 }
 
