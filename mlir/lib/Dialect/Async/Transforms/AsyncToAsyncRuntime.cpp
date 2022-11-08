@@ -10,6 +10,8 @@
 // and async.runtime operations.
 //
 //===----------------------------------------------------------------------===//
+#include <random>
+#include <string>
 
 #include "PassDetail.h"
 #include "mlir/Conversion/SCFToStandard/SCFToStandard.h"
@@ -41,6 +43,23 @@ public:
   AsyncToAsyncRuntimePass() = default;
   void runOnOperation() override;
 };
+
+std::string createFuncName(std::string prefix, int len) {
+    static auto& chrs = "0123456789"
+      "abcdefghijklmnopqrstuvwxyz"
+      "ABCDEFGHIJKLMNOPQRSTUVWXYZ";
+
+    thread_local static std::mt19937 rg{std::random_device{}()};
+    thread_local static std::uniform_int_distribution<std::string::size_type> pick(0, sizeof(chrs) - 2);
+
+    prefix += "_";
+    prefix.reserve(len);
+
+    while(len--)
+        prefix += chrs[pick(rg)];
+
+    return prefix;
+}
 
 } // namespace
 
@@ -257,7 +276,9 @@ outlineExecuteOp(SymbolTable &symbolTable, ExecuteOp execute) {
 
   // TODO: Derive outlined function name from the parent FuncOp (support
   // multiple nested async.execute operations).
-  FuncOp func = FuncOp::create(loc, kAsyncFnPrefix, funcType, funcAttrs);
+  auto fnName = createFuncName(kAsyncFnPrefix, 12);
+
+  FuncOp func = FuncOp::create(loc, fnName, funcType, funcAttrs);
   symbolTable.insert(func);
 
   SymbolTable::setSymbolVisibility(func, SymbolTable::Visibility::Private);

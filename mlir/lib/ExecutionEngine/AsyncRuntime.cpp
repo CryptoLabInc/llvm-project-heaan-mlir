@@ -47,12 +47,12 @@ class RefCounted;
 
 class AsyncRuntime {
 public:
-  AsyncRuntime() : numRefCountedObjects(0) {}
+    AsyncRuntime() : numRefCountedObjects(0), threadPool(llvm::hardware_concurrency(4)) { }
 
   ~AsyncRuntime() {
     threadPool.wait(); // wait for the completion of all async tasks
-    assert(getNumRefCountedObjects() == 0 &&
-           "all ref counted objects must be destroyed");
+    // assert(getNumRefCountedObjects() == 0 &&
+    //        "all ref counted objects must be destroyed");
   }
 
   int64_t getNumRefCountedObjects() {

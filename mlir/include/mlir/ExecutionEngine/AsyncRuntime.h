@@ -14,6 +14,8 @@
 #ifndef MLIR_EXECUTIONENGINE_ASYNCRUNTIME_H_
 #define MLIR_EXECUTIONENGINE_ASYNCRUNTIME_H_
 
+#define LLVM_EXTERNAL_VISIBILITY __attribute__ ((visibility("default")))
+
 #include <stdint.h>
 
 #ifdef mlir_async_runtime_EXPORTS
@@ -51,83 +53,83 @@ using CoroResume = void (*)(void *); // coroutine resume function
 using RefCountedObjPtr = void *;
 
 // Adds references to reference counted runtime object.
-extern "C" void mlirAsyncRuntimeAddRef(RefCountedObjPtr, int64_t);
+extern "C" LLVM_EXTERNAL_VISIBILITY void mlirAsyncRuntimeAddRef(RefCountedObjPtr, int64_t);
 
 // Drops references from reference counted runtime object.
-extern "C" void mlirAsyncRuntimeDropRef(RefCountedObjPtr, int64_t);
+extern "C" LLVM_EXTERNAL_VISIBILITY void mlirAsyncRuntimeDropRef(RefCountedObjPtr, int64_t);
 
 // Create a new `async.token` in not-ready state.
-extern "C" AsyncToken *mlirAsyncRuntimeCreateToken();
+extern "C" LLVM_EXTERNAL_VISIBILITY AsyncToken *mlirAsyncRuntimeCreateToken();
 
 // Create a new `async.value` in not-ready state. Size parameter specifies the
 // number of bytes that will be allocated for the async value storage. Storage
 // is owned by the `async.value` and deallocated when the async value is
 // destructed (reference count drops to zero).
-extern "C" AsyncValue *mlirAsyncRuntimeCreateValue(int64_t);
+extern "C" LLVM_EXTERNAL_VISIBILITY AsyncValue *mlirAsyncRuntimeCreateValue(int64_t);
 
 // Create a new `async.group` in empty state.
-extern "C" AsyncGroup *mlirAsyncRuntimeCreateGroup(int64_t size);
+extern "C" LLVM_EXTERNAL_VISIBILITY AsyncGroup *mlirAsyncRuntimeCreateGroup(int64_t size);
 
-extern "C" int64_t mlirAsyncRuntimeAddTokenToGroup(AsyncToken *, AsyncGroup *);
+extern "C" LLVM_EXTERNAL_VISIBILITY int64_t mlirAsyncRuntimeAddTokenToGroup(AsyncToken *, AsyncGroup *);
 
 // Switches `async.token` to ready state and runs all awaiters.
-extern "C" void mlirAsyncRuntimeEmplaceToken(AsyncToken *);
+extern "C" LLVM_EXTERNAL_VISIBILITY void mlirAsyncRuntimeEmplaceToken(AsyncToken *);
 
 // Switches `async.value` to ready state and runs all awaiters.
-extern "C" void mlirAsyncRuntimeEmplaceValue(AsyncValue *);
+extern "C" LLVM_EXTERNAL_VISIBILITY void mlirAsyncRuntimeEmplaceValue(AsyncValue *);
 
 // Switches `async.token` to error state and runs all awaiters.
-extern "C" void mlirAsyncRuntimeSetTokenError(AsyncToken *);
+extern "C" LLVM_EXTERNAL_VISIBILITY void mlirAsyncRuntimeSetTokenError(AsyncToken *);
 
 // Switches `async.value` to error state and runs all awaiters.
-extern "C" void mlirAsyncRuntimeSetValueError(AsyncValue *);
+extern "C" LLVM_EXTERNAL_VISIBILITY void mlirAsyncRuntimeSetValueError(AsyncValue *);
 
 // Returns true if token is in the error state.
-extern "C" bool mlirAsyncRuntimeIsTokenError(AsyncToken *);
+extern "C" LLVM_EXTERNAL_VISIBILITY bool mlirAsyncRuntimeIsTokenError(AsyncToken *);
 
 // Returns true if value is in the error state.
-extern "C" bool mlirAsyncRuntimeIsValueError(AsyncValue *);
+extern "C" LLVM_EXTERNAL_VISIBILITY bool mlirAsyncRuntimeIsValueError(AsyncValue *);
 
 // Returns true if group is in the error state (any of the tokens or values
 // added to the group are in the error state).
-extern "C" bool mlirAsyncRuntimeIsGroupError(AsyncGroup *);
+extern "C" LLVM_EXTERNAL_VISIBILITY bool mlirAsyncRuntimeIsGroupError(AsyncGroup *);
 
 // Blocks the caller thread until the token becomes ready.
-extern "C" void mlirAsyncRuntimeAwaitToken(AsyncToken *);
+extern "C" LLVM_EXTERNAL_VISIBILITY void mlirAsyncRuntimeAwaitToken(AsyncToken *);
 
 // Blocks the caller thread until the value becomes ready.
-extern "C" void mlirAsyncRuntimeAwaitValue(AsyncValue *);
+extern "C" LLVM_EXTERNAL_VISIBILITY void mlirAsyncRuntimeAwaitValue(AsyncValue *);
 
 // Blocks the caller thread until the elements in the group become ready.
-extern "C" void mlirAsyncRuntimeAwaitAllInGroup(AsyncGroup *);
+extern "C" LLVM_EXTERNAL_VISIBILITY void mlirAsyncRuntimeAwaitAllInGroup(AsyncGroup *);
 
 // Returns a pointer to the storage owned by the async value.
-extern "C" ValueStorage mlirAsyncRuntimeGetValueStorage(AsyncValue *);
+extern "C" LLVM_EXTERNAL_VISIBILITY ValueStorage mlirAsyncRuntimeGetValueStorage(AsyncValue *);
 
 // Executes the task (coro handle + resume function) in one of the threads
 // managed by the runtime.
-extern "C" void mlirAsyncRuntimeExecute(CoroHandle, CoroResume);
+extern "C" LLVM_EXTERNAL_VISIBILITY void mlirAsyncRuntimeExecute(CoroHandle, CoroResume);
 
 // Executes the task (coro handle + resume function) in one of the threads
 // managed by the runtime after the token becomes ready.
-extern "C" void mlirAsyncRuntimeAwaitTokenAndExecute(AsyncToken *, CoroHandle,
+extern "C" LLVM_EXTERNAL_VISIBILITY void mlirAsyncRuntimeAwaitTokenAndExecute(AsyncToken *, CoroHandle,
                                                      CoroResume);
 
 // Executes the task (coro handle + resume function) in one of the threads
 // managed by the runtime after the value becomes ready.
-extern "C" void mlirAsyncRuntimeAwaitValueAndExecute(AsyncValue *, CoroHandle,
+extern "C" LLVM_EXTERNAL_VISIBILITY void mlirAsyncRuntimeAwaitValueAndExecute(AsyncValue *, CoroHandle,
                                                      CoroResume);
 
 // Executes the task (coro handle + resume function) in one of the threads
 // managed by the runtime after the all members of the group become ready.
-extern "C" void
+extern "C" LLVM_EXTERNAL_VISIBILITY void
 mlirAsyncRuntimeAwaitAllInGroupAndExecute(AsyncGroup *, CoroHandle, CoroResume);
 
 //===----------------------------------------------------------------------===//
 // Small async runtime support library for testing.
 //===----------------------------------------------------------------------===//
 
-extern "C" void mlirAsyncRuntimePrintCurrentThreadId();
+extern "C" LLVM_EXTERNAL_VISIBILITY void mlirAsyncRuntimePrintCurrentThreadId();
 
 } // namespace runtime
 } // namespace mlir

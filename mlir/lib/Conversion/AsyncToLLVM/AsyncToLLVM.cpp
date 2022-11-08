@@ -5,6 +5,8 @@
 // SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
 //
 //===----------------------------------------------------------------------===//
+#include <string>
+#include <random>
 
 #include "mlir/Conversion/AsyncToLLVM/AsyncToLLVM.h"
 
@@ -187,6 +189,24 @@ struct AsyncAPI {
     return LLVM::LLVMFunctionType::get(voidTy, {i8Ptr}, false);
   }
 };
+
+std::string createFuncName(std::string prefix, int len) {
+    static auto& chrs = "0123456789"
+      "abcdefghijklmnopqrstuvwxyz"
+      "ABCDEFGHIJKLMNOPQRSTUVWXYZ";
+
+    thread_local static std::mt19937 rg{std::random_device{}()};
+    thread_local static std::uniform_int_distribution<std::string::size_type> pick(0, sizeof(chrs) - 2);
+
+    prefix += "_";
+    prefix.reserve(len);
+
+    while(len--)
+        prefix += chrs[pick(rg)];
+
+    return prefix;
+}
+
 } // namespace
 
 /// Adds Async Runtime C API declarations to the module.
@@ -262,12 +282,15 @@ static void addCRuntimeDeclarations(ModuleOp module) {
 // Coroutine resume function wrapper.
 //===----------------------------------------------------------------------===//
 
-static constexpr const char *kResume = "__resume";
+std::string kResume = "__resume";
 
 /// A function that takes a coroutine handle and calls a `llvm.coro.resume`
 /// intrinsics. We need this function to be able to pass it to the async
 /// runtime execute API.
 static void addResumeFunction(ModuleOp module) {
+  if (kResume.size() == 8)
+    kResume = createFuncName(kResume, 12);
+
   if (module.lookupSymbol(kResume))
     return;
 
